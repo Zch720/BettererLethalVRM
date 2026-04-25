@@ -4,7 +4,10 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using BepInEx;
+using BepInEx.Configuration;
+using BepInEx.Logging;
 using GameNetcodeStuff;
+using HarmonyLib;
 using OomJan;
 using UniGLTF;
 using UnityEngine;
@@ -27,9 +30,21 @@ public class BetterLethalVRMManager : BaseUnityPlugin
     private PlayerControllerB[] PlayerControllers;
 
     private bool RequirePlayerUpdate;
+    
+    internal static BetterLethalVRMManager Instance { get; private set; }
+    internal new static ManualLogSource Logger { get; private set; } = null!;
+    internal static Harmony? Harmony { get; private set; }
+    
+    internal ConfigEntry<float> ScaleSize { get; private set; }
+
+    internal Dictionary<ulong, float> PlayersScale { get; } = new();
 
     public void Awake()
     {
+        Instance = this;
+        Logger = base.Logger;
+        Patch();
+        
         AssetBundle tAssetBundle = null;
 
         try
@@ -75,6 +90,27 @@ public class BetterLethalVRMManager : BaseUnityPlugin
             enabled = false;
             Debug.LogError("BetterLethalVRM failed to create directory for models, this mod will not function");
         }
+        
+        ScaleSize = Config.Bind("General", "scaleSize", 1.0f, "Scale size of VRM models, between 0.1 and 1.5");
+    }
+    
+
+    internal static void Patch() {
+        Harmony ??= new Harmony(MyPluginInfo.PLUGIN_GUID);
+
+        Logger.LogDebug("Patching...");
+
+        Harmony.PatchAll();
+
+        Logger.LogDebug("Finished patching!");
+    }
+
+    internal static void Unpatch() {
+        Logger.LogDebug("Unpatching...");
+
+        Harmony?.UnpatchSelf();
+
+        Logger.LogDebug("Finished unpatching!");
     }
 
     private void LateUpdate()
@@ -415,11 +451,15 @@ public class BetterLethalVRMManager : BaseUnityPlugin
             boneTranslation.Add((targetT, newBone, localRotation));
         }
 
+        float customScale = 1.0f;
+        if (PlayersScale.ContainsKey(Player.playerClientId)) {
+            customScale = PlayersScale[Player.playerClientId];
+        }
         // Calculate VRM height for scaling the player to the correct size
         var p1 = new Vector3(0, tInstance.Humanoid.Head.position.y, 0);
         var p2 = new Vector3(0, tInstance.transform.position.y, 0);
         var height = Vector3.Distance(p1, p2);
-        var playerScale = PlayerPrefabHeight / height;
+        var playerScale = (PlayerPrefabHeight / height) * customScale;
         tInstance.transform.localScale = new Vector3(playerScale, playerScale, playerScale);
         Debug.Log($"BetterLethalVRM {Path} has a height of: {height:0.###}, scaling to {playerScale:0.###}");
 
@@ -429,7 +469,7 @@ public class BetterLethalVRMManager : BaseUnityPlugin
         var tHead = PlayerPrefab.transform.FindDescendant("spine");
         var tLeftFoot = PlayerPrefab.transform.FindDescendant("foot.L");
         var tRightFoot = PlayerPrefab.transform.FindDescendant("foot.R");
-        var tLethalHipHeight = Vector3.Distance(tHead.position, (tLeftFoot.position + tRightFoot.position) / 2f);
+        var tLethalHipHeight = Vector3.Distance(tHead.position, (tLeftFoot.position + tRightFoot.position) / 2f) * customScale;
 
         // Set player renderer visibility, done by name to prevent hiding special renderers like first-person arms etc
         Player.transform.FindDescendant("LOD1").gameObject.SetActive(false);
@@ -457,7 +497,7 @@ public class BetterLethalVRMManager : BaseUnityPlugin
         tNewInstance.BoneTranslation = boneTranslation;
 
         Instances.Add(tNewInstance.PlayerControllerB.playerSteamId, tNewInstance);
-
+        
         Debug.Log($"BetterLethalVRM finished loading {Path}");
     }
 
