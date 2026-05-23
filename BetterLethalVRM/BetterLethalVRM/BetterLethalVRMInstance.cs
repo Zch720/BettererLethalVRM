@@ -36,7 +36,7 @@ namespace OomJan.BetterLethalVRM
 
         public void UpdateBlink()
         {
-            if (!UseVrmBlinkExpression && (BlinkBlendshapeIndex < 0 || FaceMeshRenderer == null)) return;
+            if (!UseVrmBlinkExpression && (BlinkBlendshapeIndex < 0 || FaceMeshRenderer == null || FaceMeshRenderer.sharedMesh == null)) return;
             if (!UseVrmBlinkExpression && BlinkBlendshapeIndex >= FaceMeshRenderer.sharedMesh.blendShapeCount) return;
 
             float now = Time.time;
@@ -69,7 +69,7 @@ namespace OomJan.BetterLethalVRM
 
         public void UpdateLipSync(float sensitivitySelf, float sensitivityOthers)
         {
-            if (!UseVrmMouthExpression && (MouthBlendshapeIndex < 0 || FaceMeshRenderer == null)) return;
+            if (!UseVrmMouthExpression && (MouthBlendshapeIndex < 0 || FaceMeshRenderer == null || FaceMeshRenderer.sharedMesh == null)) return;
             if (!UseVrmMouthExpression && MouthBlendshapeIndex >= FaceMeshRenderer.sharedMesh.blendShapeCount) return;
 
             float weight;
