@@ -4,7 +4,7 @@ using UnityEngine.InputSystem;
 using HarmonyLib;
 using GameNetcodeStuff;
 
-namespace OomJan.BetterLethalVRM;
+namespace Zch.BettererLethalVRM;
 
 [HarmonyPatch(typeof(PlayerControllerB))]
 public static class CameraPatch
@@ -70,7 +70,7 @@ public static class CameraPatch
         }
         catch (Exception e)
         {
-            Debug.LogError($"BetterLethalVRM free-look camera update failed: {e}");
+            Debug.LogError($"BettererLethalVRM free-look camera update failed: {e}");
         }
     }
 }

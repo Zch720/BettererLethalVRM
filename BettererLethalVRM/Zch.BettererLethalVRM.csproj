@@ -2,16 +2,16 @@
 
     <!-- BepInEx Properties -->
     <PropertyGroup>
-        <AssemblyName>OomJan.BetterLethalVRM</AssemblyName>
-        <Product>BetterLethalVRM</Product>
+        <AssemblyName>Zch.BettererLethalVRM</AssemblyName>
+        <Product>BettererLethalVRM</Product>
         <!-- Change to whatever version you're currently on. -->
-        <Version>1.0.2</Version>
+        <Version>1.0.0</Version>
     </PropertyGroup>
 
     <!-- Project Properties -->
     <PropertyGroup>
         <TargetFramework>netstandard2.1</TargetFramework>
-        <RootNamespace>OomJan</RootNamespace>
+        <RootNamespace>Zch</RootNamespace>
         <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
         <LangVersion>latest</LangVersion>
     </PropertyGroup>
@@ -38,8 +38,8 @@
         viewing Private Information in stack traces.
         -->
         <PathMap>$([System.IO.Path]::GetFullPath('$(MSBuildThisFileDirectory)'))=./</PathMap>
-        <Company>OomJan</Company>
-        <Authors>OomJan</Authors>
+        <Company>Zch</Company>
+        <Authors>Zch</Authors>
         <Copyright>MIT License</Copyright>
     </PropertyGroup>
 

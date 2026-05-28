@@ -10,14 +10,13 @@ using BepInEx.Configuration;
 using BepInEx.Logging;
 using GameNetcodeStuff;
 using HarmonyLib;
-using OomJan;
 using UniGLTF;
 using UnityEngine;
 using UnityEngine.Rendering;
 using UnityEngine.SceneManagement;
 using UniVRM10;
 
-namespace OomJan.BetterLethalVRM;
+namespace Zch.BettererLethalVRM;
 
 [BepInPlugin(MyPluginInfo.PLUGIN_GUID, MyPluginInfo.PLUGIN_NAME, MyPluginInfo.PLUGIN_VERSION)]
 public class BetterLethalVRMManager : BaseUnityPlugin
@@ -101,7 +100,7 @@ public class BetterLethalVRMManager : BaseUnityPlugin
         if (tAssetBundle == null)
         {
             enabled = false;
-            Debug.LogError( "BetterLethalVRM failed to load it's asset bundle, this mod will not function");
+            Debug.LogError( "BettererLethalVRM failed to load it's asset bundle, this mod will not function");
             return;
         }
 
@@ -110,7 +109,7 @@ public class BetterLethalVRMManager : BaseUnityPlugin
         if (HDRPVrm10MToonMaterialImporter.MToonReplacementShader == null)
         {
             enabled = false;
-            Debug.LogError("BetterLethalVRM failed to load the MToon replacement shader, this mod will not function");
+            Debug.LogError("BettererLethalVRM failed to load the MToon replacement shader, this mod will not function");
             return;
         }
 
@@ -127,7 +126,7 @@ public class BetterLethalVRMManager : BaseUnityPlugin
         if (!Directory.Exists(MODEL_PATH))
         {
             enabled = false;
-            Debug.LogError("BetterLethalVRM failed to create directory for models, this mod will not function");
+            Debug.LogError("BettererLethalVRM failed to create directory for models, this mod will not function");
         }
         
         ScaleSize = Config.Bind("General", "scaleSize", 1.0f, "Scale size of VRM models, between 0.1 and 1.5");
@@ -266,7 +265,7 @@ public class BetterLethalVRMManager : BaseUnityPlugin
 
                 PlayerPrefab.transform.rotation = Quaternion.identity;
                 Debug.Log(
-                    $"BetterLethalVRM base prefab set to {PlayerPrefab.name}, has a height of {PlayerPrefabHeight:0.###}");
+                    $"BettererLethalVRM base prefab set to {PlayerPrefab.name}, has a height of {PlayerPrefabHeight:0.###}");
             }
         }
     }
@@ -274,7 +273,7 @@ public class BetterLethalVRMManager : BaseUnityPlugin
     private void FindPlayerControllers()
     {
         PlayerControllers = FindObjectsOfType<PlayerControllerB>(true);
-        Debug.Log($"BetterLethalVRM found {PlayerControllers.Length} player controllers");
+        Debug.Log($"BettererLethalVRM found {PlayerControllers.Length} player controllers");
     }
 
     // In LAN mode (launched from exe), playerSteamId is 0 — fall back to playerClientId
@@ -327,7 +326,7 @@ public class BetterLethalVRMManager : BaseUnityPlugin
 
                 if (path != null)
                 {
-                    Debug.Log($"BetterLethalVRM trying to load model for path {path}");
+                    Debug.Log($"BettererLethalVRM trying to load model for path {path}");
                     LoadModelToPlayer(path, tPlayer);
                 }
             }
@@ -348,7 +347,7 @@ public class BetterLethalVRMManager : BaseUnityPlugin
         //        if (Instances.TryGetValue(tMaskedEnemy.mimickingPlayer.playerSteamId, out var tInstance) &&
         //            tMaskedEnemy.transform != tInstance.PlayerControllerB.transform)
         //        {
-        //            Debug.Log($"BetterLethalVRM Mask mimicking {tInstance.PlayerControllerB.name}");
+        //            Debug.Log($"BettererLethalVRM Mask mimicking {tInstance.PlayerControllerB.name}");
         //            tInstance.SetSkeletonMimic(tMaskedEnemy.transform);
         //        }
         //    }
@@ -365,7 +364,7 @@ public class BetterLethalVRMManager : BaseUnityPlugin
         {
             enabled = false;
 
-            Debug.LogError($"BetterLethalVRM had an error loading the VRM at {Path}, this mod will not function");
+            Debug.LogError($"BettererLethalVRM had an error loading the VRM at {Path}, this mod will not function");
 
             return;
         }
@@ -375,12 +374,12 @@ public class BetterLethalVRMManager : BaseUnityPlugin
         // ArgumentException at Instances.Add and stray VRM GameObjects in the scene.
         if (Instances.ContainsKey(GetTrackingId(Player)))
         {
-            Debug.Log($"BetterLethalVRM duplicate load for {GetTrackingId(Player)}, destroying orphan");
+            Debug.Log($"BettererLethalVRM duplicate load for {GetTrackingId(Player)}, destroying orphan");
             Destroy(tInstance.gameObject);
             return;
         }
 
-        tInstance.name = $"BetterLethalVRM Character Model {Player.playerUsername} {Player.playerSteamId}";
+        tInstance.name = $"BettererLethalVRM Character Model {Player.playerUsername} {Player.playerSteamId}";
         tInstance.transform.position = Player.transform.position;
 
         // Create instance for BetterLethalVRM
@@ -392,7 +391,7 @@ public class BetterLethalVRMManager : BaseUnityPlugin
             enabled = false;
 
             Debug.LogError(
-                "BetterLethalVRM had some error loading the Lethal Company shader material, this mod will not function");
+                "BettererLethalVRM had some error loading the Lethal Company shader material, this mod will not function");
 
             Destroy(tInstance.gameObject);
             return;
@@ -445,7 +444,7 @@ public class BetterLethalVRMManager : BaseUnityPlugin
         if (faceMesh != null)
         {
             var sb = new StringBuilder();
-            sb.AppendLine($"BetterLethalVRM {Path} face mesh: \"{faceMesh.name}\" ({maxBlendShapes} blendshapes)");
+            sb.AppendLine($"BettererLethalVRM {Path} face mesh: \"{faceMesh.name}\" ({maxBlendShapes} blendshapes)");
             for (int i = 0; i < maxBlendShapes; i++)
                 sb.AppendLine($"  [{i}] {faceMesh.sharedMesh.GetBlendShapeName(i)}");
             Debug.Log(sb.ToString());
@@ -534,7 +533,7 @@ public class BetterLethalVRMManager : BaseUnityPlugin
         {
             enabled = false;
 
-            Debug.LogError("BetterLethalVRM failed to find the player prefab, this mod will not function");
+            Debug.LogError("BettererLethalVRM failed to find the player prefab, this mod will not function");
 
             Destroy(tInstance.gameObject);
             return;
@@ -546,7 +545,7 @@ public class BetterLethalVRMManager : BaseUnityPlugin
             var targetT = tAnimator.GetBoneTransform(tBone.bone);
             if (targetT == null)
             {
-                Debug.Log($"BetterLethalVRM {Path} missing bone {tBone.bone} ({tBone.name})");
+                Debug.Log($"BettererLethalVRM {Path} missing bone {tBone.bone} ({tBone.name})");
                 continue;
             }
 
@@ -575,7 +574,7 @@ public class BetterLethalVRMManager : BaseUnityPlugin
         var height = Vector3.Distance(p1, p2);
         var playerScale = (PlayerPrefabHeight / height) * customScale;
         tInstance.transform.localScale = new Vector3(playerScale, playerScale, playerScale);
-        Debug.Log($"BetterLethalVRM {Path} has a height of: {height:0.###}, scaling to {playerScale:0.###}");
+        Debug.Log($"BettererLethalVRM {Path} has a height of: {height:0.###}, scaling to {playerScale:0.###}");
 
         // Calculate distance from feet to hips to offset the player hips for different leg lengths
         var tVRMHipHeight = Vector3.Distance(tInstance.Humanoid.Hips.position,
@@ -617,11 +616,11 @@ public class BetterLethalVRMManager : BaseUnityPlugin
         }
         catch (Exception e)
         {
-            Debug.LogError($"BetterLethalVRM {Path} expression auto-detect failed, falling back to config blendshape indices: {e}");
+            Debug.LogError($"BettererLethalVRM {Path} expression auto-detect failed, falling back to config blendshape indices: {e}");
             tNewInstance.UseVrmBlinkExpression = false;
             tNewInstance.UseVrmMouthExpression = false;
         }
-        Debug.Log($"BetterLethalVRM {Path} expressions: blink={tNewInstance.UseVrmBlinkExpression}, mouth={tNewInstance.UseVrmMouthExpression}");
+        Debug.Log($"BettererLethalVRM {Path} expressions: blink={tNewInstance.UseVrmBlinkExpression}, mouth={tNewInstance.UseVrmMouthExpression}");
 
         // Apply face settings: local player uses config, remote uses synced settings
         if (Player.IsOwner)
@@ -657,7 +656,7 @@ public class BetterLethalVRMManager : BaseUnityPlugin
 
         Instances.Add(GetTrackingId(tNewInstance.PlayerControllerB), tNewInstance);
         
-        Debug.Log($"BetterLethalVRM finished loading {Path}");
+        Debug.Log($"BettererLethalVRM finished loading {Path}");
     }
 
     private void AnimateBonePairs()
@@ -751,7 +750,7 @@ public class BetterLethalVRMManager : BaseUnityPlugin
             }
             catch (Exception e)
             {
-                Debug.LogError($"BetterLethalVRM face update failed for {tInstance.PlayerControllerB?.playerUsername}: {e}");
+                Debug.LogError($"BettererLethalVRM face update failed for {tInstance.PlayerControllerB?.playerUsername}: {e}");
             }
         }
     }

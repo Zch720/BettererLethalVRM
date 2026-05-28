@@ -1,7 +1,7 @@
 {
-    "name": "BetterLethalVRM",
-    "version_number": "1.0.2",
-    "website_url": "https://github.com/OomJan/BetterLethalVRM",
+    "name": "BettererLethalVRM",
+    "version_number": "1.0.0",
+    "website_url": "https://github.com/Zch720/BettererLethalVRM",
     "description": "Replace player models with custom VRMs. Supports auto-blink and lip sync with automatic VRM expression detection.",
     "dependencies": ["BepInEx-BepInExPack-5.4.2100"]
 }
