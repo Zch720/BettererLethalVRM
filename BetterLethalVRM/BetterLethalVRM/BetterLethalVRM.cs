@@ -45,6 +45,10 @@ public class BetterLethalVRMManager : BaseUnityPlugin
     internal ConfigEntry<int> MouthBlendshapeIndex { get; private set; }
     internal ConfigEntry<float> LipSyncSensitivitySelf { get; private set; }
     internal ConfigEntry<float> LipSyncSensitivityOthers { get; private set; }
+    internal ConfigEntry<bool> FreeLookTerminalLadder { get; private set; }
+    internal ConfigEntry<float> FreeLookSensitivity { get; private set; }
+    internal ConfigEntry<bool> HideHelmetForVRM { get; private set; }
+    private GameObject _helmetModel;
     internal Dictionary<ulong, float> PlayersScale { get; } = new();
     internal Dictionary<ulong, FaceSettings> PlayersFaceSettings { get; } = new();
 
@@ -70,6 +74,7 @@ public class BetterLethalVRMManager : BaseUnityPlugin
         Instance = this;
         Logger = base.Logger;
         Patch();
+        CameraPatch.Initialize();
         
         AssetBundle tAssetBundle = null;
 
@@ -137,6 +142,13 @@ public class BetterLethalVRMManager : BaseUnityPlugin
         LipSyncSensitivityOthers = Config.Bind("LipSync", "LipSyncSensitivityOthers", 2.0f,
             "Mouth sensitivity for other players' voices (audio RMS). Higher = opens more for quiet sounds.");
 
+        FreeLookTerminalLadder = Config.Bind("General", "FreeLookTerminalLadder", true,
+            "Allow free camera look while using the terminal or climbing ladders.");
+        FreeLookSensitivity = Config.Bind("General", "FreeLookSensitivity", 1.0f,
+            "Mouse sensitivity for free look while in terminal or on ladder. 1.0 = default feel.");
+        HideHelmetForVRM = Config.Bind("General", "HideHelmetForVRM", true,
+            "Hide the default helmet model when a VRM is loaded for the local player.");
+
     }
     
 
@@ -169,10 +181,26 @@ public class BetterLethalVRMManager : BaseUnityPlugin
             FindPlayerControllers();
             RequirePlayerUpdate = false;
         }
+
+        UpdateHelmetVisibility();
+    }
+
+    private void UpdateHelmetVisibility()
+    {
+        if (_helmetModel == null)
+            _helmetModel = GameObject.Find("Systems/Rendering/PlayerHUDHelmetModel");
+        if (_helmetModel == null) return;
+
+        var localPlayer = StartOfRound.Instance?.localPlayerController;
+        bool hasVrm = localPlayer != null && Instances.ContainsKey(GetTrackingId(localPlayer));
+        bool shouldHide = hasVrm && HideHelmetForVRM.Value;
+        _helmetModel.SetActive(!shouldHide);
     }
 
     private void SceneLoad()
     {
+        _helmetModel = null;
+
         // When we are not in a lobby we dont need any VRM so we clean up everything
         if (GameNetworkManager.Instance?.currentLobby == null)
         {
@@ -681,7 +709,7 @@ public class BetterLethalVRMManager : BaseUnityPlugin
 
     private void OnBeginFrameRendering(ScriptableRenderContext context, Camera[] cameras)
     {
-        foreach (var tInstance in Instances.Values.ToList())
+        foreach (var tInstance in Instances.Values)
         {
             if (tInstance.Vrm10Instance == null || tInstance.PlayerControllerB == null) continue;
             tInstance.UpdateBlink();
@@ -694,5 +722,6 @@ public class BetterLethalVRMManager : BaseUnityPlugin
     private void OnDestroy()
     {
         RenderPipelineManager.beginFrameRendering -= OnBeginFrameRendering;
+        CameraPatch.Cleanup();
     }
 }
