@@ -62,10 +62,16 @@ public class BetterLethalVRMManager : BaseUnityPlugin
     }
 
     private DissonanceComms _dissonanceComms;
+    private float _nextDissonanceLookup;
     internal DissonanceComms GetDissonanceComms()
     {
-        if (_dissonanceComms == null)
+        // Throttle FindObjectOfType to at most once per second; it's O(scene size) and was being
+        // called every frame for the local player's lip sync while DissonanceComms was unavailable.
+        if (_dissonanceComms == null && Time.unscaledTime >= _nextDissonanceLookup)
+        {
             _dissonanceComms = FindObjectOfType<DissonanceComms>();
+            _nextDissonanceLookup = Time.unscaledTime + 1f;
+        }
         return _dissonanceComms;
     }
 
@@ -288,7 +294,8 @@ public class BetterLethalVRMManager : BaseUnityPlugin
             if (PlayersBySteamID.ContainsKey(trackingId) &&
                 (tPlayer.disconnectedMidGame || (tPlayer.NetworkObject?.OwnerClientId == 0 && tPlayer.name != "Player")))
             {
-                if (Instances.TryGetValue(trackingId, out var p2)) Destroy(p2.Vrm10Instance.gameObject);
+                if (Instances.TryGetValue(trackingId, out var p2) && p2.Vrm10Instance != null)
+                    Destroy(p2.Vrm10Instance.gameObject);
 
                 PlayersBySteamID.Remove(trackingId);
                 Instances.Remove(trackingId);
@@ -363,6 +370,16 @@ public class BetterLethalVRMManager : BaseUnityPlugin
             return;
         }
 
+        // Guard against in-flight duplicate loads: if Instances already has an entry for this player
+        // (e.g. another LoadModelToPlayer call completed first), discard this orphan to avoid
+        // ArgumentException at Instances.Add and stray VRM GameObjects in the scene.
+        if (Instances.ContainsKey(GetTrackingId(Player)))
+        {
+            Debug.Log($"BetterLethalVRM duplicate load for {GetTrackingId(Player)}, destroying orphan");
+            Destroy(tInstance.gameObject);
+            return;
+        }
+
         tInstance.name = $"BetterLethalVRM Character Model {Player.playerUsername} {Player.playerSteamId}";
         tInstance.transform.position = Player.transform.position;
 
@@ -377,6 +394,7 @@ public class BetterLethalVRMManager : BaseUnityPlugin
             Debug.LogError(
                 "BetterLethalVRM had some error loading the Lethal Company shader material, this mod will not function");
 
+            Destroy(tInstance.gameObject);
             return;
         }
 
@@ -518,6 +536,7 @@ public class BetterLethalVRMManager : BaseUnityPlugin
 
             Debug.LogError("BetterLethalVRM failed to find the player prefab, this mod will not function");
 
+            Destroy(tInstance.gameObject);
             return;
         }
 
@@ -585,12 +604,23 @@ public class BetterLethalVRMManager : BaseUnityPlugin
         // Since we made changes to the bones, we have to reconstruct them
         tInstance.Runtime.ReconstructSpringBone();
 
-        // Auto-detect VRM expressions from model definition
-        var clips = tInstance.Vrm.Expression.Clips;
-        var blinkClip = clips.FirstOrDefault(c => c.Preset == ExpressionPreset.blink);
-        var aaClip = clips.FirstOrDefault(c => c.Preset == ExpressionPreset.aa);
-        tNewInstance.UseVrmBlinkExpression = blinkClip.Clip != null && blinkClip.Clip.MorphTargetBindings.Any();
-        tNewInstance.UseVrmMouthExpression = aaClip.Clip != null && aaClip.Clip.MorphTargetBindings.Any();
+        // Auto-detect VRM expressions from model definition. Fall back to the blendshape-index
+        // path if the VRM has no/broken expression metadata, rather than letting the NRE escape
+        // and leak the partially-initialized VRM GameObject.
+        try
+        {
+            var clips = tInstance.Vrm.Expression.Clips;
+            var blinkClip = clips.FirstOrDefault(c => c.Preset == ExpressionPreset.blink);
+            var aaClip = clips.FirstOrDefault(c => c.Preset == ExpressionPreset.aa);
+            tNewInstance.UseVrmBlinkExpression = blinkClip.Clip != null && blinkClip.Clip.MorphTargetBindings.Any();
+            tNewInstance.UseVrmMouthExpression = aaClip.Clip != null && aaClip.Clip.MorphTargetBindings.Any();
+        }
+        catch (Exception e)
+        {
+            Debug.LogError($"BetterLethalVRM {Path} expression auto-detect failed, falling back to config blendshape indices: {e}");
+            tNewInstance.UseVrmBlinkExpression = false;
+            tNewInstance.UseVrmMouthExpression = false;
+        }
         Debug.Log($"BetterLethalVRM {Path} expressions: blink={tNewInstance.UseVrmBlinkExpression}, mouth={tNewInstance.UseVrmMouthExpression}");
 
         // Apply face settings: local player uses config, remote uses synced settings
@@ -712,8 +742,17 @@ public class BetterLethalVRMManager : BaseUnityPlugin
         foreach (var tInstance in Instances.Values)
         {
             if (tInstance.Vrm10Instance == null || tInstance.PlayerControllerB == null) continue;
-            tInstance.UpdateBlink();
-            tInstance.UpdateLipSync(LipSyncSensitivitySelf.Value, LipSyncSensitivityOthers.Value);
+            // Isolate per-instance face updates so one broken VRM (missing face mesh, destroyed
+            // audio source, etc.) doesn't abort the loop and freeze every other player's face.
+            try
+            {
+                tInstance.UpdateBlink();
+                tInstance.UpdateLipSync(LipSyncSensitivitySelf.Value, LipSyncSensitivityOthers.Value);
+            }
+            catch (Exception e)
+            {
+                Debug.LogError($"BetterLethalVRM face update failed for {tInstance.PlayerControllerB?.playerUsername}: {e}");
+            }
         }
     }
 
