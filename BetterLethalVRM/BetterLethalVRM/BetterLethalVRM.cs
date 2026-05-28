@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Text;
+using Dissonance;
 using BepInEx;
 using BepInEx.Configuration;
 using BepInEx.Logging;
@@ -36,8 +38,32 @@ public class BetterLethalVRMManager : BaseUnityPlugin
     internal static Harmony? Harmony { get; private set; }
     
     internal ConfigEntry<float> ScaleSize { get; private set; }
-
+    internal ConfigEntry<int> BlinkBlendshapeIndex { get; private set; }
+    internal ConfigEntry<float> BlinkIntervalMin { get; private set; }
+    internal ConfigEntry<float> BlinkIntervalMax { get; private set; }
+    internal ConfigEntry<float> BlinkDuration { get; private set; }
+    internal ConfigEntry<int> MouthBlendshapeIndex { get; private set; }
+    internal ConfigEntry<float> LipSyncSensitivitySelf { get; private set; }
+    internal ConfigEntry<float> LipSyncSensitivityOthers { get; private set; }
     internal Dictionary<ulong, float> PlayersScale { get; } = new();
+    internal Dictionary<ulong, FaceSettings> PlayersFaceSettings { get; } = new();
+
+    internal struct FaceSettings
+    {
+        public int BlinkBlendshapeIndex;
+        public int MouthBlendshapeIndex;
+        public float BlinkIntervalMin;
+        public float BlinkIntervalMax;
+        public float BlinkDuration;
+    }
+
+    private DissonanceComms _dissonanceComms;
+    internal DissonanceComms GetDissonanceComms()
+    {
+        if (_dissonanceComms == null)
+            _dissonanceComms = FindObjectOfType<DissonanceComms>();
+        return _dissonanceComms;
+    }
 
     public void Awake()
     {
@@ -80,6 +106,8 @@ public class BetterLethalVRMManager : BaseUnityPlugin
         // Trigger to check for new player controllers on scene load
         SceneManager.sceneLoaded += (_, _) => SceneLoad();
 
+        RenderPipelineManager.beginFrameRendering += OnBeginFrameRendering;
+
         // Keep this object alive forever, through scene unloads and more
         gameObject.hideFlags = HideFlags.HideAndDontSave;
 
@@ -92,6 +120,23 @@ public class BetterLethalVRMManager : BaseUnityPlugin
         }
         
         ScaleSize = Config.Bind("General", "scaleSize", 1.0f, "Scale size of VRM models, between 0.1 and 1.5");
+
+        BlinkBlendshapeIndex = Config.Bind("Blink", "BlinkBlendshapeIndex", -1,
+            "Blendshape index for blinking.\n-1 to disable.\nIgnored if the model has a \"Blink\" VRM expression with blendshape bindings.");
+        BlinkIntervalMin = Config.Bind("Blink", "BlinkIntervalMin", 2.0f,
+            "Minimum seconds between blinks.");
+        BlinkIntervalMax = Config.Bind("Blink", "BlinkIntervalMax", 6.0f,
+            "Maximum seconds between blinks.");
+        BlinkDuration = Config.Bind("Blink", "BlinkDuration", 0.15f,
+            "Duration of each blink in seconds.");
+
+        MouthBlendshapeIndex = Config.Bind("LipSync", "MouthBlendshapeIndex", -1,
+            "Blendshape index for mouth open when talking.\n-1 to disable.\nIgnored if the model has an \"A\" VRM expression with blendshape bindings.");
+        LipSyncSensitivitySelf = Config.Bind("LipSync", "LipSyncSensitivitySelf", 2.0f,
+            "Mouth sensitivity for your own voice (Dissonance amplitude, range 0-1). Higher = opens more for quiet sounds.");
+        LipSyncSensitivityOthers = Config.Bind("LipSync", "LipSyncSensitivityOthers", 2.0f,
+            "Mouth sensitivity for other players' voices (audio RMS). Higher = opens more for quiet sounds.");
+
     }
     
 
@@ -198,20 +243,27 @@ public class BetterLethalVRMManager : BaseUnityPlugin
         Debug.Log($"BetterLethalVRM found {PlayerControllers.Length} player controllers");
     }
 
+    // In LAN mode (launched from exe), playerSteamId is 0 — fall back to playerClientId
+    private static ulong GetTrackingId(PlayerControllerB player) =>
+        player.playerSteamId != 0 ? player.playerSteamId : player.playerClientId;
+
     private void FindUpdatedIDs()
     {
         foreach (var tPlayer in PlayerControllers)
         {
-            if (tPlayer.playerSteamId == 0) continue;
+            // Skip uncontrolled empty player slots
+            if (!tPlayer.isPlayerControlled && tPlayer.playerSteamId == 0) continue;
+
+            var trackingId = GetTrackingId(tPlayer);
 
             // Remove instances and dict entries for disconnected PlayerControllers
-            if (PlayersBySteamID.ContainsKey(tPlayer.playerSteamId) &&
+            if (PlayersBySteamID.ContainsKey(trackingId) &&
                 (tPlayer.disconnectedMidGame || (tPlayer.NetworkObject?.OwnerClientId == 0 && tPlayer.name != "Player")))
             {
-                if (Instances.TryGetValue(tPlayer.playerSteamId, out var p2)) Destroy(p2.Vrm10Instance.gameObject);
+                if (Instances.TryGetValue(trackingId, out var p2)) Destroy(p2.Vrm10Instance.gameObject);
 
-                PlayersBySteamID.Remove(tPlayer.playerSteamId);
-                Instances.Remove(tPlayer.playerSteamId);
+                PlayersBySteamID.Remove(trackingId);
+                Instances.Remove(trackingId);
 
                 continue;
             }
@@ -219,39 +271,29 @@ public class BetterLethalVRMManager : BaseUnityPlugin
             if (tPlayer.NetworkObject?.OwnerClientId == 0 && tPlayer.name != "Player") continue;
 
             // Add new PlayerControllers to the Id dict. Try and load models for the steamId
-            if (PlayersBySteamID.TryAdd(tPlayer.playerSteamId, tPlayer))
+            if (PlayersBySteamID.TryAdd(trackingId, tPlayer))
             {
-                if (!File.Exists($"{MODEL_PATH}/{tPlayer.playerSteamId}_{tPlayer.playerUsername}.txt"))
+                if (tPlayer.playerSteamId != 0 &&
+                    !File.Exists($"{MODEL_PATH}/{tPlayer.playerSteamId}_{tPlayer.playerUsername}.txt"))
                     File.WriteAllText($"{MODEL_PATH}/{tPlayer.playerSteamId}_{tPlayer.playerUsername}.txt",
                         $"{tPlayer.playerSteamId} seen as {tPlayer.playerUsername}");
 
                 // We already have an instance and thus don't need to do anything
-                if (Instances.ContainsKey(tPlayer.playerSteamId)) continue;
+                if (Instances.ContainsKey(trackingId)) continue;
 
-                var path = $"{MODEL_PATH}/{tPlayer.playerSteamId}.vrm";
-                if (File.Exists(path))
+                string path = null;
+
+                if (tPlayer.playerSteamId != 0 && File.Exists($"{MODEL_PATH}/{tPlayer.playerSteamId}.vrm"))
+                    path = $"{MODEL_PATH}/{tPlayer.playerSteamId}.vrm";
+                else if (!string.IsNullOrEmpty(tPlayer.playerUsername) && File.Exists($"{MODEL_PATH}/{tPlayer.playerUsername}.vrm"))
+                    path = $"{MODEL_PATH}/{tPlayer.playerUsername}.vrm";
+                else if (File.Exists($"{MODEL_PATH}/fallback.vrm"))
+                    path = $"{MODEL_PATH}/fallback.vrm";
+
+                if (path != null)
                 {
                     Debug.Log($"BetterLethalVRM trying to load model for path {path}");
                     LoadModelToPlayer(path, tPlayer);
-                }
-                else
-                {
-                    path = $"{MODEL_PATH}/{tPlayer.playerUsername}.vrm";
-                    if (File.Exists(path))
-                    {
-                        Debug.Log($"BetterLethalVRM trying to load model for path {path}");
-                        LoadModelToPlayer(path, tPlayer);
-                    }
-                    else
-                    {
-                        // Fallback
-                        path = $"{MODEL_PATH}/fallback.vrm";
-                        if (File.Exists(path))
-                        {
-                            Debug.Log($"BetterLethalVRM trying to load fallback model for path {path}");
-                            LoadModelToPlayer(path, tPlayer);
-                        }
-                    }
                 }
             }
         }
@@ -336,6 +378,31 @@ public class BetterLethalVRMManager : BaseUnityPlugin
             }
 
             tRenderer.materials = newMaterials;
+        }
+
+        // Find the face mesh: pick the SkinnedMeshRenderer with the most blendshapes
+        SkinnedMeshRenderer faceMesh = null;
+        int maxBlendShapes = 0;
+        foreach (var tRenderer in tNewInstance.Renderers)
+        {
+            if (tRenderer is SkinnedMeshRenderer smr && smr.sharedMesh != null)
+            {
+                int count = smr.sharedMesh.blendShapeCount;
+                if (count > maxBlendShapes)
+                {
+                    maxBlendShapes = count;
+                    faceMesh = smr;
+                }
+            }
+        }
+        tNewInstance.FaceMeshRenderer = faceMesh;
+        if (faceMesh != null)
+        {
+            var sb = new StringBuilder();
+            sb.AppendLine($"BetterLethalVRM {Path} face mesh: \"{faceMesh.name}\" ({maxBlendShapes} blendshapes)");
+            for (int i = 0; i < maxBlendShapes; i++)
+                sb.AppendLine($"  [{i}] {faceMesh.sharedMesh.GetBlendShapeName(i)}");
+            Debug.Log(sb.ToString());
         }
 
         // Disable the VRM animators
@@ -490,13 +557,47 @@ public class BetterLethalVRMManager : BaseUnityPlugin
         // Since we made changes to the bones, we have to reconstruct them
         tInstance.Runtime.ReconstructSpringBone();
 
+        // Auto-detect VRM expressions from model definition
+        var clips = tInstance.Vrm.Expression.Clips;
+        var blinkClip = clips.FirstOrDefault(c => c.Preset == ExpressionPreset.blink);
+        var aaClip = clips.FirstOrDefault(c => c.Preset == ExpressionPreset.aa);
+        tNewInstance.UseVrmBlinkExpression = blinkClip.Clip != null && blinkClip.Clip.MorphTargetBindings.Any();
+        tNewInstance.UseVrmMouthExpression = aaClip.Clip != null && aaClip.Clip.MorphTargetBindings.Any();
+        Debug.Log($"BetterLethalVRM {Path} expressions: blink={tNewInstance.UseVrmBlinkExpression}, mouth={tNewInstance.UseVrmMouthExpression}");
+
+        // Apply face settings: local player uses config, remote uses synced settings
+        if (Player.IsOwner)
+        {
+            tNewInstance.BlinkBlendshapeIndex = BlinkBlendshapeIndex.Value;
+            tNewInstance.MouthBlendshapeIndex = MouthBlendshapeIndex.Value;
+            tNewInstance.BlinkIntervalMin = BlinkIntervalMin.Value;
+            tNewInstance.BlinkIntervalMax = BlinkIntervalMax.Value;
+            tNewInstance.BlinkDuration = BlinkDuration.Value;
+        }
+        else if (PlayersFaceSettings.TryGetValue(Player.playerClientId, out var faceSettings))
+        {
+            tNewInstance.BlinkBlendshapeIndex = faceSettings.BlinkBlendshapeIndex;
+            tNewInstance.MouthBlendshapeIndex = faceSettings.MouthBlendshapeIndex;
+            tNewInstance.BlinkIntervalMin = faceSettings.BlinkIntervalMin;
+            tNewInstance.BlinkIntervalMax = faceSettings.BlinkIntervalMax;
+            tNewInstance.BlinkDuration = faceSettings.BlinkDuration;
+        }
+        else
+        {
+            tNewInstance.BlinkBlendshapeIndex = -1;
+            tNewInstance.MouthBlendshapeIndex = -1;
+            tNewInstance.BlinkIntervalMin = BlinkIntervalMin.Value;
+            tNewInstance.BlinkIntervalMax = BlinkIntervalMax.Value;
+            tNewInstance.BlinkDuration = BlinkDuration.Value;
+        }
+
         // Add new player instance to the set
         tNewInstance.Vrm10Instance = tInstance;
         tNewInstance.PlayerControllerB = Player;
         tNewInstance.HipOffset = tVRMHipHeight - tLethalHipHeight;
         tNewInstance.BoneTranslation = boneTranslation;
 
-        Instances.Add(tNewInstance.PlayerControllerB.playerSteamId, tNewInstance);
+        Instances.Add(GetTrackingId(tNewInstance.PlayerControllerB), tNewInstance);
         
         Debug.Log($"BetterLethalVRM finished loading {Path}");
     }
@@ -573,8 +674,25 @@ public class BetterLethalVRMManager : BaseUnityPlugin
         if (tToRemove.Any())
             foreach (var i in tToRemove)
             {
-                Instances.Remove(i.PlayerControllerB.playerSteamId);
-                PlayersBySteamID.Remove(i.PlayerControllerB.playerSteamId);
+                Instances.Remove(GetTrackingId(i.PlayerControllerB));
+                PlayersBySteamID.Remove(GetTrackingId(i.PlayerControllerB));
             }
+    }
+
+    private void OnBeginFrameRendering(ScriptableRenderContext context, Camera[] cameras)
+    {
+        foreach (var tInstance in Instances.Values.ToList())
+        {
+            if (tInstance.Vrm10Instance == null || tInstance.PlayerControllerB == null) continue;
+            tInstance.UpdateBlink();
+            tInstance.UpdateLipSync(LipSyncSensitivitySelf.Value, LipSyncSensitivityOthers.Value);
+        }
+    }
+
+    internal IEnumerable<BetterLethalVRMInstance> GetInstances() => Instances.Values;
+
+    private void OnDestroy()
+    {
+        RenderPipelineManager.beginFrameRendering -= OnBeginFrameRendering;
     }
 }
