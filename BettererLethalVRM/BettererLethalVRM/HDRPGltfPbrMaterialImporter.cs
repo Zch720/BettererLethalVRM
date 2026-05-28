@@ -5,7 +5,7 @@ using UnityEngine;
 using VRMShaders;
 using ColorSpace = VRMShaders.ColorSpace;
 
-namespace OomJan.BetterLethalVRM;
+namespace Zch.BettererLethalVRM;
 
 /// <summary>
 /// glTF PBR to URP Lit.

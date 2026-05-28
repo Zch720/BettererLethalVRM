@@ -8,13 +8,13 @@ using HarmonyLib;
 using Unity.Netcode;
 using UnityEngine;
 
-namespace OomJan.BetterLethalVRM;
+namespace Zch.BettererLethalVRM;
 
 [HarmonyPatch]
 public static class MessagePatch {
     private const char SPERATOR = ';';
     
-    private const string FACE_PREFIX = "[betterlethalvrm.face]";
+    private const string FACE_PREFIX = "[bettererlethalvrm.face]";
 
     private static MethodInfo addTextMessageServerRpc =
         AccessTools.Method(typeof(HUDManager), "AddTextMessageServerRpc");
@@ -46,11 +46,11 @@ public static class MessagePatch {
             BetterLethalVRMManager.Instance.PlayersScale.Clear();
             BetterLethalVRMManager.Instance.PlayersFaceSettings.Clear();
 
-            addTextMessageServerRpc?.Invoke(HUDManager.Instance, [ $"[betterlethalvrm.size];{ulong.MaxValue};{__instance.playerClientId};{BetterLethalVRMManager.Instance.ScaleSize.Value}" ]);
+            addTextMessageServerRpc?.Invoke(HUDManager.Instance, [ $"[bettererlethalvrm.size];{ulong.MaxValue};{__instance.playerClientId};{BetterLethalVRMManager.Instance.ScaleSize.Value}" ]);
             SendFaceSettings(ulong.MaxValue, __instance.playerClientId);
         }
         catch (Exception e) {
-            Debug.LogError($"BetterLethalVRM connect postfix failed: {e}");
+            Debug.LogError($"BettererLethalVRM connect postfix failed: {e}");
         }
     }
     
@@ -64,8 +64,8 @@ public static class MessagePatch {
             NetworkManager networkManager = __instance.NetworkManager;
             if (networkManager == null || !networkManager.IsListening) return;
 
-            if (chatMessage.StartsWith("[betterlethalvrm.size]")) {
-                Debug.Log($"BetterLethalVRM: server get message: {chatMessage}");
+            if (chatMessage.StartsWith("[bettererlethalvrm.size]")) {
+                Debug.Log($"BettererLethalVRM: server get message: {chatMessage}");
 
                 if (networkManager.IsHost) {
                     string[] messages = chatMessage.Split(SPERATOR);
@@ -75,13 +75,13 @@ public static class MessagePatch {
                         foreach (KeyValuePair<ulong, float> playerScale in BetterLethalVRMManager.Instance.PlayersScale.ToList()) {
                             if (playerScale.Key == scaleClientId) continue;
                             addTextMessageServerRpc?.Invoke(__instance,
-                                [$"[betterlethalvrm.size];{scaleClientId};{playerScale.Key};{playerScale.Value}"]);
+                                [$"[bettererlethalvrm.size];{scaleClientId};{playerScale.Key};{playerScale.Value}"]);
                         }
                     }
                 }
             }
             else if (chatMessage.StartsWith(FACE_PREFIX)) {
-                Debug.Log($"BetterLethalVRM: server get message: {chatMessage}");
+                Debug.Log($"BettererLethalVRM: server get message: {chatMessage}");
 
                 if (networkManager.IsHost) {
                     string[] messages = chatMessage.Split(SPERATOR);
@@ -102,7 +102,7 @@ public static class MessagePatch {
             }
         }
         catch (Exception e) {
-            Debug.LogError($"BetterLethalVRM server message handler failed: {e}");
+            Debug.LogError($"BettererLethalVRM server message handler failed: {e}");
         }
     }
 
@@ -115,8 +115,8 @@ public static class MessagePatch {
             NetworkManager networkManager = __instance.NetworkManager;
             if (networkManager == null || !networkManager.IsListening) return;
 
-            if (chatMessage.StartsWith("[betterlethalvrm.size]")) {
-                Debug.Log($"BetterLethalVRM: client get message: {chatMessage}");
+            if (chatMessage.StartsWith("[bettererlethalvrm.size]")) {
+                Debug.Log($"BettererLethalVRM: client get message: {chatMessage}");
 
                 if (networkManager.IsClient || networkManager.IsHost) {
                     string[] messages = chatMessage.Split(SPERATOR);
@@ -131,7 +131,7 @@ public static class MessagePatch {
                 }
             }
             else if (chatMessage.StartsWith(FACE_PREFIX)) {
-                Debug.Log($"BetterLethalVRM: client get message: {chatMessage}");
+                Debug.Log($"BettererLethalVRM: client get message: {chatMessage}");
 
                 if (networkManager.IsClient || networkManager.IsHost) {
                     string[] messages = chatMessage.Split(SPERATOR);
@@ -166,7 +166,7 @@ public static class MessagePatch {
             }
         }
         catch (Exception e) {
-            Debug.LogError($"BetterLethalVRM client message handler failed: {e}");
+            Debug.LogError($"BettererLethalVRM client message handler failed: {e}");
         }
     }
 }

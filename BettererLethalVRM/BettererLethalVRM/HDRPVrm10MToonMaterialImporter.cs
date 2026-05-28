@@ -7,7 +7,7 @@ using VRMShaders;
 using VRMShaders.VRM10.MToon10.Runtime;
 using GltfDeserializer = UniGLTF.Extensions.VRMC_materials_mtoon.GltfDeserializer;
 
-namespace OomJan.BetterLethalVRM;
+namespace Zch.BettererLethalVRM;
 
 /// <summary>
 /// Convert MToon parameters from glTF specification to Unity implementation.(for URP)

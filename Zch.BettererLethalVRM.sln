@@ -3,7 +3,7 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.9.34728.123
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "OomJan.BetterLethalVRM", "BetterLethalVRM\OomJan.BetterLethalVRM.csproj", "{9DAC0DD8-E0CD-47B3-A555-8CC7F91233CE}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Zch.BettererLethalVRM", "BettererLethalVRM\Zch.BettererLethalVRM.csproj", "{9DAC0DD8-E0CD-47B3-A555-8CC7F91233CE}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

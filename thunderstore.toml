@@ -5,10 +5,10 @@ schemaVersion = "0.0.1"
 repository = "https://thunderstore.io"
 
 [package]
-namespace = "OomJan"
-name = "BetterLethalVRM"
-description = "VRM mod for Lethal Company"
-websiteUrl = "https://github.com/OomJan/BetterLethalVRM"
+namespace = "Zch"
+name = "BettererLethalVRM"
+description = "Replace player models with custom VRMs. Supports auto-blink and lip sync with automatic VRM expression detection."
+websiteUrl = "https://github.com/Zch720/BettererLethalVRM"
 containsNsfwContent = false
 
 [package.dependencies]
@@ -33,64 +33,64 @@ source = "LICENSE.md"
 target = "LICENSE.md"
 
 [[build.copy]]
-source = "BetterLethalVRM/bin/Release/netstandard2.1/bundle.asset"
-target = "BepInEx/plugins/OomJan-BetterLethalVRM/bundle.asset"
+source = "BettererLethalVRM/bin/Release/netstandard2.1/bundle.asset"
+target = "BepInEx/plugins/Zch-BettererLethalVRM/bundle.asset"
 
 [[build.copy]]
-source = "BetterLethalVRM/bin/Release/netstandard2.1/FastSpringBone10.dll"
-target = "BepInEx/plugins/OomJan-BetterLethalVRM/FastSpringBone10.dll"
+source = "BettererLethalVRM/bin/Release/netstandard2.1/FastSpringBone10.dll"
+target = "BepInEx/plugins/Zch-BettererLethalVRM/FastSpringBone10.dll"
 
 [[build.copy]]
-source = "BetterLethalVRM/bin/Release/netstandard2.1/MToon.dll"
-target = "BepInEx/plugins/OomJan-BetterLethalVRM/MToon.dll"
+source = "BettererLethalVRM/bin/Release/netstandard2.1/MToon.dll"
+target = "BepInEx/plugins/Zch-BettererLethalVRM/MToon.dll"
 
 [[build.copy]]
-source = "BetterLethalVRM/bin/Release/netstandard2.1/OomJan.BetterLethalVRM.deps.json"
-target = "BepInEx/plugins/OomJan-BetterLethalVRM/OomJan.BetterLethalVRM.deps.json"
+source = "BettererLethalVRM/bin/Release/netstandard2.1/Zch.BettererLethalVRM.deps.json"
+target = "BepInEx/plugins/Zch-BettererLethalVRM/Zch.BettererLethalVRM.deps.json"
 
 [[build.copy]]
-source = "BetterLethalVRM/bin/Release/netstandard2.1/OomJan.BetterLethalVRM.dll"
-target = "BepInEx/plugins/OomJan-BetterLethalVRM/OomJan.BetterLethalVRM.dll"
+source = "BettererLethalVRM/bin/Release/netstandard2.1/Zch.BettererLethalVRM.dll"
+target = "BepInEx/plugins/Zch-BettererLethalVRM/Zch.BettererLethalVRM.dll"
 
 [[build.copy]]
-source = "BetterLethalVRM/bin/Release/netstandard2.1/UniGLTF.dll"
-target = "BepInEx/plugins/OomJan-BetterLethalVRM/UniGLTF.dll"
+source = "BettererLethalVRM/bin/Release/netstandard2.1/UniGLTF.dll"
+target = "BepInEx/plugins/Zch-BettererLethalVRM/UniGLTF.dll"
 
 [[build.copy]]
-source = "BetterLethalVRM/bin/Release/netstandard2.1/UniGLTF.Utils.dll"
-target = "BepInEx/plugins/OomJan-BetterLethalVRM/UniGLTF.Utils.dll"
+source = "BettererLethalVRM/bin/Release/netstandard2.1/UniGLTF.Utils.dll"
+target = "BepInEx/plugins/Zch-BettererLethalVRM/UniGLTF.Utils.dll"
 
 [[build.copy]]
-source = "BetterLethalVRM/bin/Release/netstandard2.1/UniHumanoid.dll"
-target = "BepInEx/plugins/OomJan-BetterLethalVRM/UniHumanoid.dll"
+source = "BettererLethalVRM/bin/Release/netstandard2.1/UniHumanoid.dll"
+target = "BepInEx/plugins/Zch-BettererLethalVRM/UniHumanoid.dll"
 
 [[build.copy]]
-source = "BetterLethalVRM/bin/Release/netstandard2.1/VRM10.dll"
-target = "BepInEx/plugins/OomJan-BetterLethalVRM/VRM10.dll"
+source = "BettererLethalVRM/bin/Release/netstandard2.1/VRM10.dll"
+target = "BepInEx/plugins/Zch-BettererLethalVRM/VRM10.dll"
 
 [[build.copy]]
-source = "BetterLethalVRM/bin/Release/netstandard2.1/VrmLib.dll"
-target = "BepInEx/plugins/OomJan-BetterLethalVRM/VrmLib.dll"
+source = "BettererLethalVRM/bin/Release/netstandard2.1/VrmLib.dll"
+target = "BepInEx/plugins/Zch-BettererLethalVRM/VrmLib.dll"
 
 [[build.copy]]
-source = "BetterLethalVRM/bin/Release/netstandard2.1/VRMShaders.GLTF.IO.Runtime.dll"
-target = "BepInEx/plugins/OomJan-BetterLethalVRM/VRMShaders.GLTF.IO.Runtime.dll"
+source = "BettererLethalVRM/bin/Release/netstandard2.1/VRMShaders.GLTF.IO.Runtime.dll"
+target = "BepInEx/plugins/Zch-BettererLethalVRM/VRMShaders.GLTF.IO.Runtime.dll"
 
 [[build.copy]]
-source = "BetterLethalVRM/bin/Release/netstandard2.1/VRMShaders.GLTF.UniUnlit.Runtime.dll"
-target = "BepInEx/plugins/OomJan-BetterLethalVRM/VRMShaders.GLTF.UniUnlit.Runtime.dll"
+source = "BettererLethalVRM/bin/Release/netstandard2.1/VRMShaders.GLTF.UniUnlit.Runtime.dll"
+target = "BepInEx/plugins/Zch-BettererLethalVRM/VRMShaders.GLTF.UniUnlit.Runtime.dll"
 
 [[build.copy]]
-source = "BetterLethalVRM/bin/Release/netstandard2.1/VRMShaders.VRM.IO.Runtime.dll"
-target = "BepInEx/plugins/OomJan-BetterLethalVRM/VRMShaders.VRM.IO.Runtime.dll"
+source = "BettererLethalVRM/bin/Release/netstandard2.1/VRMShaders.VRM.IO.Runtime.dll"
+target = "BepInEx/plugins/Zch-BettererLethalVRM/VRMShaders.VRM.IO.Runtime.dll"
 
 [[build.copy]]
-source = "BetterLethalVRM/bin/Release/netstandard2.1/VRMShaders.VRM10.Format.Runtime.dll"
-target = "BepInEx/plugins/OomJan-BetterLethalVRM/VRMShaders.VRM10.Format.Runtime.dll"
+source = "BettererLethalVRM/bin/Release/netstandard2.1/VRMShaders.VRM10.Format.Runtime.dll"
+target = "BepInEx/plugins/Zch-BettererLethalVRM/VRMShaders.VRM10.Format.Runtime.dll"
 
 [[build.copy]]
-source = "BetterLethalVRM/bin/Release/netstandard2.1/VRMShaders.VRM10.MToon10.Runtime.dll"
-target = "BepInEx/plugins/OomJan-BetterLethalVRM/VRMShaders.VRM10.MToon10.Runtime.dll"
+source = "BettererLethalVRM/bin/Release/netstandard2.1/VRMShaders.VRM10.MToon10.Runtime.dll"
+target = "BepInEx/plugins/Zch-BettererLethalVRM/VRMShaders.VRM10.MToon10.Runtime.dll"
 
 [publish]
 communities = ["lethal-company"]

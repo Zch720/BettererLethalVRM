@@ -6,7 +6,7 @@ using UniGLTF;
 using UnityEngine;
 using UniVRM10;
 
-namespace OomJan.BetterLethalVRM
+namespace Zch.BettererLethalVRM
 {
     internal class BetterLethalVRMInstance
     {

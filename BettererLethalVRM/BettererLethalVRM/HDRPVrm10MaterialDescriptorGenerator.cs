@@ -4,7 +4,7 @@ using UniGLTF;
 using UnityEngine;
 using VRMShaders;
 
-namespace OomJan.BetterLethalVRM;
+namespace Zch.BettererLethalVRM;
 
 public sealed class HDRPVrm10MaterialDescriptorGenerator : IMaterialDescriptorGenerator
 {
@@ -17,7 +17,7 @@ public sealed class HDRPVrm10MaterialDescriptorGenerator : IMaterialDescriptorGe
             return tMatDesc;
         Debug.LogWarning(string.Format("vrm material: {0} out of range. fallback", i));
         Debug.LogError(
-            "BetterLethalVRM fallback materials are not supported, try exporting your VRM again using the MToon shader");
+            "BettererLethalVRM fallback materials are not supported, try exporting your VRM again using the MToon shader");
         return new MaterialDescriptor(GltfMaterialImportUtils.ImportMaterialName(i, null),
             HDRPGltfPbrMaterialImporter.Shader, new int?(), new Dictionary<string, TextureDescriptor>(),
             new Dictionary<string, float>(), new Dictionary<string, Color>(), new Dictionary<string, Vector4>(),
